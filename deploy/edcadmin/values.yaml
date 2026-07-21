@@ -12,6 +12,7 @@ edc:
   baseUrl: "http://alice-edc-controlplane:8081/management"
   participantId: ""
   bpn: ""
+  dspAddress: ""
 
 # Login for the UI. Password is served from a Secret (see 'secrets' below).
 auth:

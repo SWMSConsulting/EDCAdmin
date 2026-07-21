@@ -4,6 +4,7 @@ edc:
   baseUrl: "http://alice-edc-controlplane:8081/management"
   participantId: "did:web:alice-windx.cluster.swms-cloud.com"
   bpn: "BPNL00000000WA01"
+  dspAddress: "https://alice-edc-windx.cluster.swms-cloud.com/api/v1/dsp"
 
 auth:
   username: "admin"

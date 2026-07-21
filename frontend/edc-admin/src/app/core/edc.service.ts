@@ -15,6 +15,7 @@ export interface ConnectorInfo {
   edcBaseUrl: string;
   participant: string;
   bpn: string;
+  dspAddress: string;
 }
 
 export interface NewAsset {
@@ -55,6 +56,7 @@ export class EdcService {
     return firstValueFrom(
       this.http.post<any>(`${this.base}/catalog/request`, {
         ...EDC_CTX,
+        '@type': 'CatalogRequest',
         counterPartyAddress,
         counterPartyId,
         protocol: 'dataspace-protocol-http',

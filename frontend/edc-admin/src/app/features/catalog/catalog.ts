@@ -26,11 +26,26 @@ export class Catalog {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
 
+  constructor() {
+    // Prefill the form with the own connector's DSP address + BPN as a working example.
+    this.edc
+      .connectorInfo()
+      .then((info) => {
+        if (!this.query.counterPartyAddress) this.query.counterPartyAddress = info.dspAddress ?? '';
+        if (!this.query.counterPartyId) this.query.counterPartyId = info.bpn ?? info.participant ?? '';
+      })
+      .catch(() => {});
+  }
+
   async loadOwn(): Promise<void> {
     try {
       const info = await this.edc.connectorInfo();
-      this.query.counterPartyAddress = info.edcBaseUrl.replace(/\/management.*$/, '') + '/api/dsp';
-      this.query.counterPartyId = info.participant;
+      this.query.counterPartyAddress = info.dspAddress ?? '';
+      this.query.counterPartyId = info.bpn ?? info.participant ?? '';
+      if (!this.query.counterPartyAddress) {
+        this.error.set('Für diesen Connector ist keine DSP-Adresse konfiguriert (EdcManagement:DspAddress).');
+        return;
+      }
       await this.request();
     } catch {
       this.error.set('Eigene Connector-Daten konnten nicht geladen werden.');

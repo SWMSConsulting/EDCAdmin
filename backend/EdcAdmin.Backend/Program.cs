@@ -121,6 +121,7 @@ app.MapGet("/api/config", (IConfiguration cfg) => Results.Ok(new
     edcBaseUrl = cfg["EdcManagement:BaseUrl"],
     participant = cfg["EdcManagement:ParticipantId"],
     bpn = cfg["EdcManagement:Bpn"],
+    dspAddress = cfg["EdcManagement:DspAddress"],
 })).RequireAuthorization("authenticated");
 
 // --- Proxy + SPA fallback ----------------------------------------------------------------------

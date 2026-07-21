@@ -38,6 +38,8 @@ spec:
               value: {{ .Values.edc.participantId | quote }}
             - name: EdcManagement__Bpn
               value: {{ .Values.edc.bpn | quote }}
+            - name: EdcManagement__DspAddress
+              value: {{ .Values.edc.dspAddress | quote }}
             - name: Auth__Username
               value: {{ .Values.auth.username | quote }}
             - name: Auth__Password
