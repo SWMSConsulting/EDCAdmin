@@ -1,0 +1,23 @@
+# .NET
+bin/
+obj/
+*.user
+
+# Node / Angular
+node_modules/
+frontend/**/dist/
+.angular/
+npm-debug.log*
+
+# Secrets / license (never commit)
+DevExpress_License.txt
+appsettings.*.Local.json
+*.local.env
+
+# OS/IDE
+.DS_Store
+.vs/
+.idea/
+
+# SPA build output copied into the backend at build time
+backend/EdcAdmin.Backend/wwwroot/

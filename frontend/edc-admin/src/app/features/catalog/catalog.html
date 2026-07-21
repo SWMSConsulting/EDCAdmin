@@ -1,0 +1,43 @@
+<h2 class="page-title">Katalog</h2>
+
+<dx-form class="query-form" [formData]="query" [colCount]="2" labelMode="floating">
+  <dxi-item
+    dataField="counterPartyAddress"
+    [label]="{ text: 'DSP-Adresse (Counterparty)' }"
+    [editorOptions]="{ stylingMode: 'outlined', placeholder: 'https://partner/api/dsp' }"
+  ></dxi-item>
+  <dxi-item
+    dataField="counterPartyId"
+    [label]="{ text: 'Teilnehmer-ID (BPN / DID)' }"
+    [editorOptions]="{ stylingMode: 'outlined' }"
+  ></dxi-item>
+</dx-form>
+
+<div class="toolbar">
+  <dx-button text="Katalog abrufen" type="default" icon="search" (onClick)="request()"></dx-button>
+  <dx-button text="Eigener Katalog" icon="home" (onClick)="loadOwn()"></dx-button>
+</div>
+
+@if (error()) {
+  <div class="error-banner">{{ error() }}</div>
+}
+
+<dx-data-grid
+  class="grid"
+  [dataSource]="datasets()"
+  keyExpr="id"
+  [showBorders]="true"
+  [columnAutoWidth]="true"
+  [wordWrapEnabled]="true"
+>
+  <dxo-search-panel [visible]="true" [width]="280" placeholder="Suchen..."></dxo-search-panel>
+  <dxo-header-filter [visible]="true"></dxo-header-filter>
+  <dxo-paging [pageSize]="20"></dxo-paging>
+  <dxo-load-panel [enabled]="loading()"></dxo-load-panel>
+
+  <dxi-column dataField="name" caption="Name"></dxi-column>
+  <dxi-column dataField="id" caption="Asset-ID"></dxi-column>
+  <dxi-column dataField="contentType" caption="Typ"></dxi-column>
+  <dxi-column dataField="policyCount" caption="Policies" dataType="number" [width]="100"></dxi-column>
+  <dxi-column dataField="offerId" caption="Offer-ID" [visible]="false"></dxi-column>
+</dx-data-grid>

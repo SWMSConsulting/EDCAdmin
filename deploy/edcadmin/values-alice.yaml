@@ -1,0 +1,20 @@
+# Alice-Instanz. Secrets (secrets.authPassword, secrets.edcApiKey) NICHT hier ablegen,
+# sondern beim Deploy via --set oder existingSecret setzen.
+edc:
+  baseUrl: "http://alice-edc-controlplane:8081/management"
+  participantId: "did:web:alice-windx.cluster.swms-cloud.com"
+  bpn: "BPNL00000000WA01"
+
+auth:
+  username: "admin"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: edcadmin-alice-windx.cluster.swms-cloud.com
+  clusterIssuer: letsencrypt-prod
+  tlsSecretName: edcadmin-alice-tls
+  # Optional: auf Büro-/VPN-Netze einschränken, z. B. "203.0.113.0/24"
+  whitelistSourceRange: ""
+
+fullnameOverride: edcadmin-alice

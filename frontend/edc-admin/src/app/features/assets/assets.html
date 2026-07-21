@@ -1,0 +1,48 @@
+<div class="page-header">
+  <h2 class="page-title">Assets</h2>
+  <dx-button text="Neues Asset" icon="add" type="default" (onClick)="openCreate()"></dx-button>
+</div>
+
+<dx-data-grid
+  class="grid"
+  [dataSource]="store"
+  keyExpr="id"
+  [showBorders]="true"
+  [columnAutoWidth]="true"
+  [wordWrapEnabled]="true"
+>
+  <dxo-search-panel [visible]="true" [width]="280" placeholder="Suchen..."></dxo-search-panel>
+  <dxo-header-filter [visible]="true"></dxo-header-filter>
+  <dxo-paging [pageSize]="20"></dxo-paging>
+  <dxo-editing mode="row" [allowDeleting]="true" [useIcons]="true">
+    <dxo-texts confirmDeleteMessage="Dieses Asset wirklich löschen?"></dxo-texts>
+  </dxo-editing>
+
+  <dxi-column dataField="name" caption="Name"></dxi-column>
+  <dxi-column dataField="id" caption="Asset-ID"></dxi-column>
+  <dxi-column dataField="contentType" caption="Content-Type"></dxi-column>
+  <dxi-column dataField="addressType" caption="Adress-Typ"></dxi-column>
+  <dxi-column dataField="baseUrl" caption="Basis-URL"></dxi-column>
+</dx-data-grid>
+
+<dx-popup
+  [visible]="popupVisible()"
+  (visibleChange)="popupVisible.set($event)"
+  title="Neues Asset"
+  [width]="480"
+  height="auto"
+  [showCloseButton]="true"
+  [hideOnOutsideClick]="true"
+>
+  <dx-form [formData]="newAsset" labelMode="floating">
+    <dxi-item dataField="id" [label]="{ text: 'Asset-ID' }" [editorOptions]="{ stylingMode: 'outlined' }"></dxi-item>
+    <dxi-item dataField="name" [label]="{ text: 'Name' }" [editorOptions]="{ stylingMode: 'outlined' }"></dxi-item>
+    <dxi-item dataField="contentType" [label]="{ text: 'Content-Type' }" [editorOptions]="{ stylingMode: 'outlined' }"></dxi-item>
+    <dxi-item dataField="baseUrl" [label]="{ text: 'Basis-URL (HttpData)' }" [editorOptions]="{ stylingMode: 'outlined' }"></dxi-item>
+  </dx-form>
+
+  <div class="popup-actions">
+    <dx-button text="Abbrechen" (onClick)="popupVisible.set(false)"></dx-button>
+    <dx-button text="Speichern" type="default" [disabled]="saving()" (onClick)="save()"></dx-button>
+  </div>
+</dx-popup>

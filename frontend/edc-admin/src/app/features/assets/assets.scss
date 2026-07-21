@@ -1,0 +1,21 @@
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.page-title {
+  margin: 0;
+}
+
+.grid {
+  max-height: calc(100vh - 160px);
+}
+
+.popup-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}

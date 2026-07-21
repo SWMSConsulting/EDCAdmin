@@ -1,0 +1,6 @@
+EDC Admin ist deployed.
+
+  URL:   https://{{ .Values.ingress.host }}
+  Login: {{ .Values.auth.username }} / (Passwort aus Secret {{ include "edcadmin.secretName" . }})
+
+Verwaltete EDC Management API: {{ .Values.edc.baseUrl }}

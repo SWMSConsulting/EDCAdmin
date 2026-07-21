@@ -1,0 +1,21 @@
+<h2 class="page-title">Verträge / Vertragsverhandlungen</h2>
+
+<dx-data-grid
+  class="grid"
+  [dataSource]="store"
+  keyExpr="id"
+  [showBorders]="true"
+  [columnAutoWidth]="true"
+  [wordWrapEnabled]="true"
+>
+  <dxo-search-panel [visible]="true" [width]="280" placeholder="Suchen..."></dxo-search-panel>
+  <dxo-header-filter [visible]="true"></dxo-header-filter>
+  <dxo-paging [pageSize]="20"></dxo-paging>
+
+  <dxi-column dataField="state" caption="Status" [width]="150"></dxi-column>
+  <dxi-column dataField="type" caption="Rolle" [width]="120"></dxi-column>
+  <dxi-column dataField="counterPartyId" caption="Gegenpartei"></dxi-column>
+  <dxi-column dataField="counterPartyAddress" caption="Gegenpartei-Adresse"></dxi-column>
+  <dxi-column dataField="agreementId" caption="Agreement-ID"></dxi-column>
+  <dxi-column dataField="id" caption="Negotiation-ID" [visible]="false"></dxi-column>
+</dx-data-grid>

@@ -1,0 +1,24 @@
+<h2 class="page-title">Einstellungen</h2>
+
+<p class="hint">
+  Die Verbindungsdaten des Connectors werden beim Deployment gesetzt und sind hier schreibgeschützt.
+</p>
+
+@if (info(); as i) {
+  <table class="info-table">
+    <tr>
+      <th>Teilnehmer-ID</th>
+      <td>{{ i.participant }}</td>
+    </tr>
+    <tr>
+      <th>BPN</th>
+      <td>{{ i.bpn }}</td>
+    </tr>
+    <tr>
+      <th>Management-Endpoint</th>
+      <td>{{ i.edcBaseUrl }}</td>
+    </tr>
+  </table>
+} @else {
+  <p>Verbindungsdaten konnten nicht geladen werden.</p>
+}

@@ -1,0 +1,22 @@
+.page-title {
+  margin: 0 0 16px;
+}
+
+.query-form {
+  margin-bottom: 16px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.error-banner {
+  margin-bottom: 16px;
+  color: #d9534f;
+}
+
+.grid {
+  max-height: calc(100vh - 340px);
+}

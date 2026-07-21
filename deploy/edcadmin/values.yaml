@@ -1,0 +1,57 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/swmsconsulting/edcadmin
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# EDC Management API this instance manages (cluster-internal address).
+edc:
+  baseUrl: "http://alice-edc-controlplane:8081/management"
+  participantId: ""
+  bpn: ""
+
+# Login for the UI. Password is served from a Secret (see 'secrets' below).
+auth:
+  username: "admin"
+
+# Secret material. Either let the chart create the Secret from these values,
+# or point 'existingSecret' at a pre-created Secret holding the same keys
+# (auth-password, edc-api-key).
+secrets:
+  create: true
+  authPassword: ""
+  edcApiKey: ""
+existingSecret: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: edcadmin.example.com
+  clusterIssuer: letsencrypt-prod
+  tlsSecretName: edcadmin-tls
+  # Optional nginx IP allow-list, e.g. "203.0.113.0/24,198.51.100.7/32". Empty = disabled.
+  whitelistSourceRange: ""
+  extraAnnotations: {}
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]

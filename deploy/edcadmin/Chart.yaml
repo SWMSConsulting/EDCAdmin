@@ -1,0 +1,6 @@
+apiVersion: v2
+name: edcadmin
+description: EDC Admin - management web UI (BFF + DevExtreme Angular SPA) for an EDC connector
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

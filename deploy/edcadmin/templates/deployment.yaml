@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "edcadmin.fullname" . }}
+  labels:
+    {{- include "edcadmin.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "edcadmin.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "edcadmin.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: edcadmin
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: EdcManagement__BaseUrl
+              value: {{ .Values.edc.baseUrl | quote }}
+            - name: EdcManagement__ParticipantId
+              value: {{ .Values.edc.participantId | quote }}
+            - name: EdcManagement__Bpn
+              value: {{ .Values.edc.bpn | quote }}
+            - name: Auth__Username
+              value: {{ .Values.auth.username | quote }}
+            - name: Auth__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "edcadmin.secretName" . }}
+                  key: auth-password
+            - name: EdcManagement__ApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "edcadmin.secretName" . }}
+                  key: edc-api-key
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

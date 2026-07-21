@@ -1,0 +1,65 @@
+name: deploy
+
+# Produktivnahes Szenario: Alice und Bob liegen auf UNTERSCHIEDLICHEN Clustern.
+# Jede Instanz wird mit ihrer eigenen Kubeconfig deployed.
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image-Tag in GHCR (z. B. latest oder sha-abc1234)'
+        required: true
+        default: 'latest'
+      target:
+        description: 'Welche Instanz(en) deployen'
+        type: choice
+        options: [both, alice, bob]
+        default: both
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        participant: [alice, bob]
+    steps:
+      - name: Skip non-selected
+        id: guard
+        run: |
+          if [ "${{ inputs.target }}" != "both" ] && [ "${{ inputs.target }}" != "${{ matrix.participant }}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.skip != 'true'
+
+      - uses: azure/setup-helm@v4
+        if: steps.guard.outputs.skip != 'true'
+
+      - name: Write kubeconfig for ${{ matrix.participant }}
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          mkdir -p "$HOME/.kube"
+          if [ "${{ matrix.participant }}" = "alice" ]; then
+            echo "${{ secrets.KUBECONFIG_ALICE }}" | base64 -d > "$HOME/.kube/config"
+          else
+            echo "${{ secrets.KUBECONFIG_BOB }}" | base64 -d > "$HOME/.kube/config"
+          fi
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Helm upgrade ${{ matrix.participant }}
+        if: steps.guard.outputs.skip != 'true'
+        env:
+          ALICE_UI_PASSWORD: ${{ secrets.ALICE_UI_PASSWORD }}
+          ALICE_EDC_API_KEY: ${{ secrets.ALICE_EDC_API_KEY }}
+          BOB_UI_PASSWORD: ${{ secrets.BOB_UI_PASSWORD }}
+          BOB_EDC_API_KEY: ${{ secrets.BOB_EDC_API_KEY }}
+        run: |
+          P=${{ matrix.participant }}
+          if [ "$P" = "alice" ]; then PW="$ALICE_UI_PASSWORD"; KEY="$ALICE_EDC_API_KEY"; else PW="$BOB_UI_PASSWORD"; KEY="$BOB_EDC_API_KEY"; fi
+          helm upgrade --install "edcadmin-$P" deploy/edcadmin \
+            --namespace dataspace --create-namespace \
+            -f "deploy/edcadmin/values-$P.yaml" \
+            --set image.tag="${{ inputs.image_tag }}" \
+            --set secrets.authPassword="$PW" \
+            --set secrets.edcApiKey="$KEY" \
+            --wait --timeout 5m
