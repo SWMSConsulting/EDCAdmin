@@ -3,7 +3,7 @@
 edc:
   baseUrl: "http://bob-edc-controlplane:8081/management"
   participantId: "did:web:bob-windx.cluster.swms-cloud.com"
-  bpn: "BPNL00000000WB01"
+  bpn: "BPNL00000000WB02"
 
 auth:
   username: "admin"

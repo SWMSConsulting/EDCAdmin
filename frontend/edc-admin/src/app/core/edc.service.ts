@@ -29,9 +29,12 @@ export class EdcService {
   private http = inject(HttpClient);
   private base = '/api/edc/v3';
 
-  /** POST {resource}/request with a QuerySpec (empty body = all). */
+  /** POST {resource}/request with a QuerySpec (empty body = all). The EDC management API
+   *  rejects a context-only body, so the QuerySpec @type is always sent. */
   query<T = any>(resource: string, body: Record<string, unknown> = {}): Promise<T[]> {
-    return firstValueFrom(this.http.post<T[]>(`${this.base}/${resource}/request`, { ...EDC_CTX, ...body }));
+    return firstValueFrom(
+      this.http.post<T[]>(`${this.base}/${resource}/request`, { ...EDC_CTX, '@type': 'QuerySpec', ...body }),
+    );
   }
 
   create(resource: string, body: Record<string, unknown>): Promise<any> {
