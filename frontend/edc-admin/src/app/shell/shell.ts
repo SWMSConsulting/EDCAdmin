@@ -25,6 +25,8 @@ export class Shell {
   readonly navItems: NavItem[] = [
     { text: 'Katalog', icon: 'search', path: '/catalog' },
     { text: 'Assets', icon: 'box', path: '/assets' },
+    { text: 'Policies', icon: 'key', path: '/policies' },
+    { text: 'Vertragsdefinitionen', icon: 'detailslayout', path: '/contract-definitions' },
     { text: 'Verträge', icon: 'file', path: '/contracts' },
     { text: 'Transfers', icon: 'movetofolder', path: '/transfers' },
     { text: 'Einstellungen', icon: 'preferences', path: '/settings' },

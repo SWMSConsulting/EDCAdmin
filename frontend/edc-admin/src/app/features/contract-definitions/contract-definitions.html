@@ -1,0 +1,67 @@
+<div class="page-header">
+  <h2 class="page-title">Vertragsdefinitionen</h2>
+  <dx-button text="Neue Definition" icon="add" type="default" (onClick)="openCreate()"></dx-button>
+</div>
+
+<p class="hint">
+  Eine Vertragsdefinition macht ein Asset im Dataspace verfügbar: die <strong>Access-Policy</strong>
+  bestimmt, wer es im Katalog <strong>sieht</strong>, die <strong>Contract-Policy</strong>, unter welchen
+  Bedingungen <strong>verhandelt/geladen</strong> werden darf. Ohne Asset-ID gilt sie für alle Assets.
+</p>
+
+<dx-data-grid
+  class="grid"
+  [dataSource]="store"
+  keyExpr="id"
+  [showBorders]="true"
+  [columnAutoWidth]="true"
+  [wordWrapEnabled]="true"
+>
+  <dxo-search-panel [visible]="true" [width]="280" placeholder="Suchen..."></dxo-search-panel>
+  <dxo-header-filter [visible]="true"></dxo-header-filter>
+  <dxo-paging [pageSize]="20"></dxo-paging>
+  <dxo-editing mode="row" [allowDeleting]="true" [useIcons]="true">
+    <dxo-texts confirmDeleteMessage="Diese Vertragsdefinition wirklich löschen?"></dxo-texts>
+  </dxo-editing>
+
+  <dxi-column dataField="id" caption="Definition-ID"></dxi-column>
+  <dxi-column dataField="accessPolicyId" caption="Access-Policy (sehen)"></dxi-column>
+  <dxi-column dataField="contractPolicyId" caption="Contract-Policy (laden)"></dxi-column>
+  <dxi-column dataField="assets" caption="Assets"></dxi-column>
+</dx-data-grid>
+
+<dx-popup
+  [visible]="popupVisible()"
+  (visibleChange)="popupVisible.set($event)"
+  title="Neue Vertragsdefinition"
+  [width]="560"
+  height="auto"
+  [showCloseButton]="true"
+  [hideOnOutsideClick]="true"
+>
+  <dx-form [formData]="newDef" labelMode="floating">
+    <dxi-item dataField="id" [label]="{ text: 'Definition-ID' }" [editorOptions]="{ stylingMode: 'outlined' }"></dxi-item>
+    <dxi-item
+      dataField="accessPolicyId"
+      editorType="dxSelectBox"
+      [label]="{ text: 'Access-Policy (wer sieht das Asset)' }"
+      [editorOptions]="policySelectOptions"
+    ></dxi-item>
+    <dxi-item
+      dataField="contractPolicyId"
+      editorType="dxSelectBox"
+      [label]="{ text: 'Contract-Policy (wer darf laden)' }"
+      [editorOptions]="policySelectOptions"
+    ></dxi-item>
+    <dxi-item
+      dataField="assetId"
+      [label]="{ text: 'Asset-ID (z. B. bob-asset-1 – leer = alle)' }"
+      [editorOptions]="{ stylingMode: 'outlined' }"
+    ></dxi-item>
+  </dx-form>
+
+  <div class="popup-actions">
+    <dx-button text="Abbrechen" (onClick)="popupVisible.set(false)"></dx-button>
+    <dx-button text="Speichern" type="default" [disabled]="saving()" (onClick)="save()"></dx-button>
+  </div>
+</dx-popup>

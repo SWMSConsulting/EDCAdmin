@@ -40,4 +40,9 @@
   <dxi-column dataField="contentType" caption="Typ"></dxi-column>
   <dxi-column dataField="policyCount" caption="Policies" dataType="number" [width]="100"></dxi-column>
   <dxi-column dataField="offerId" caption="Offer-ID" [visible]="false"></dxi-column>
+  <dxi-column caption="Aktion" [width]="140" cellTemplate="actionCell" [allowFiltering]="false" [allowSorting]="false"></dxi-column>
+
+  <div *dxTemplate="let cell of 'actionCell'">
+    <dx-button text="Anfragen" icon="download" stylingMode="text" type="default" (onClick)="requestAsset(cell.data)"></dx-button>
+  </div>
 </dx-data-grid>

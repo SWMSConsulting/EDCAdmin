@@ -25,6 +25,44 @@ export interface NewAsset {
   baseUrl: string;
 }
 
+export interface NewPolicy {
+  id: string;
+  /** Constraint left operand, e.g. 'BusinessPartnerNumber' (tractusx-edc BPN policy function). */
+  leftOperand: string;
+  operator: string;
+  /** Empty => unconstrained policy (allow all). */
+  rightOperand: string;
+}
+
+export interface NewContractDefinition {
+  id: string;
+  /** Who may SEE the asset in the catalog. */
+  accessPolicyId: string;
+  /** Under which terms it may be negotiated/downloaded. */
+  contractPolicyId: string;
+  /** Single asset this definition applies to (empty => all assets). */
+  assetId: string;
+}
+
+function summarizePolicy(policy: any): string {
+  const perms = policy?.permission ?? policy?.['odrl:permission'];
+  const arr = Array.isArray(perms) ? perms : perms ? [perms] : [];
+  const cons = arr.flatMap((p: any) => {
+    const c = p?.constraint ?? p?.['odrl:constraint'];
+    return Array.isArray(c) ? c : c ? [c] : [];
+  });
+  if (!cons.length) return 'ohne Einschränkung (alle)';
+  return cons
+    .map((c: any) => `${c.leftOperand ?? c['odrl:leftOperand']} ${c.operator ?? c['odrl:operator']} ${c.rightOperand ?? c['odrl:rightOperand']}`)
+    .join(', ');
+}
+
+function summarizeSelector(selector: any): string {
+  const arr = Array.isArray(selector) ? selector : selector ? [selector] : [];
+  if (!arr.length) return 'alle Assets';
+  return arr.map((c: any) => `${c.operandRight}`).join(', ');
+}
+
 @Injectable({ providedIn: 'root' })
 export class EdcService {
   private http = inject(HttpClient);
@@ -112,6 +150,40 @@ export class EdcService {
     });
   }
 
+  /** Start a contract negotiation for a catalog offer. `offer` is the raw odrl policy taken
+   *  from the catalog dataset; assigner (provider) and target (asset) are stamped in. */
+  negotiate(offer: any, assetId: string, counterPartyAddress: string, counterPartyId: string): Promise<any> {
+    const policy = { ...offer, '@type': 'odrl:Offer', assigner: counterPartyId, 'odrl:target': assetId };
+    return firstValueFrom(
+      this.http.post<any>(`${this.base}/contractnegotiations`, {
+        ...EDC_CTX,
+        '@type': 'ContractRequest',
+        counterPartyAddress,
+        protocol: 'dataspace-protocol-http',
+        policy,
+      }),
+    );
+  }
+
+  getNegotiation(id: string): Promise<any> {
+    return firstValueFrom(this.http.get<any>(`${this.base}/contractnegotiations/${encodeURIComponent(id)}`));
+  }
+
+  /** Consumer-pull transfer: HttpData-PULL causes the EDC to cache an EDR, retrievable via /edrs. */
+  startTransfer(agreementId: string, assetId: string, counterPartyAddress: string): Promise<any> {
+    return firstValueFrom(
+      this.http.post<any>(`${this.base}/transferprocesses`, {
+        ...EDC_CTX,
+        '@type': 'TransferRequest',
+        counterPartyAddress,
+        contractId: agreementId,
+        assetId,
+        protocol: 'dataspace-protocol-http',
+        transferType: 'HttpData-PULL',
+      }),
+    );
+  }
+
   // --- Transfer processes -----------------------------------------------------------------------
   transfersStore(): CustomStore {
     return new CustomStore({
@@ -128,6 +200,70 @@ export class EdcService {
           counterPartyId: t.counterPartyId ?? '',
         }));
       },
+    });
+  }
+
+  // --- Policy definitions (provider access/contract policies) ------------------------------------
+  policyDefinitionsStore(): CustomStore {
+    return new CustomStore({
+      key: 'id',
+      loadMode: 'raw',
+      load: async () => {
+        const raw = await this.query('policydefinitions');
+        return raw.map((p: any) => ({
+          id: p['@id'],
+          type: p.policy?.['@type'] ?? '',
+          summary: summarizePolicy(p.policy),
+        }));
+      },
+      remove: (key) => this.remove('policydefinitions', String(key)),
+    });
+  }
+
+  /** Bare list of policy-definition ids, for pickers in the contract-definition form. */
+  async policyIds(): Promise<string[]> {
+    const raw = await this.query('policydefinitions');
+    return raw.map((p: any) => p['@id']).filter(Boolean);
+  }
+
+  createPolicyDefinition(p: NewPolicy): Promise<any> {
+    const permission = p.rightOperand
+      ? [{ action: 'use', constraint: [{ leftOperand: p.leftOperand, operator: p.operator, rightOperand: p.rightOperand }] }]
+      : [];
+    return this.create('policydefinitions', {
+      '@id': p.id,
+      // Inner ODRL context: the policy engine reads odrl:permission/constraint/leftOperand.
+      policy: { '@context': 'http://www.w3.org/ns/odrl.jsonld', '@type': 'Set', permission },
+    });
+  }
+
+  // --- Contract definitions (bind asset <-> access/contract policy) ------------------------------
+  contractDefinitionsStore(): CustomStore {
+    return new CustomStore({
+      key: 'id',
+      loadMode: 'raw',
+      load: async () => {
+        const raw = await this.query('contractdefinitions');
+        return raw.map((c: any) => ({
+          id: c['@id'],
+          accessPolicyId: c.accessPolicyId,
+          contractPolicyId: c.contractPolicyId,
+          assets: summarizeSelector(c.assetsSelector),
+        }));
+      },
+      remove: (key) => this.remove('contractdefinitions', String(key)),
+    });
+  }
+
+  createContractDefinition(c: NewContractDefinition): Promise<any> {
+    const assetsSelector = c.assetId
+      ? [{ '@type': 'Criterion', operandLeft: 'https://w3id.org/edc/v0.0.1/ns/id', operator: '=', operandRight: c.assetId }]
+      : [];
+    return this.create('contractdefinitions', {
+      '@id': c.id,
+      accessPolicyId: c.accessPolicyId,
+      contractPolicyId: c.contractPolicyId,
+      assetsSelector,
     });
   }
 }

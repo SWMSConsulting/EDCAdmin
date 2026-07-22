@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { DxFormModule } from 'devextreme-angular/ui/form';
 import { DxButtonModule } from 'devextreme-angular/ui/button';
 import { DxDataGridModule } from 'devextreme-angular/ui/data-grid';
+import notify from 'devextreme/ui/notify';
 import { EdcService } from '../../core/edc.service';
 
 interface Dataset {
@@ -10,7 +11,11 @@ interface Dataset {
   contentType: string;
   offerId: string;
   policyCount: number;
+  /** Raw odrl offer, needed to start a contract negotiation. */
+  offer: any;
 }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 @Component({
   selector: 'app-catalog',
@@ -82,7 +87,38 @@ export class Catalog {
         contentType: d.contenttype ?? d['dct:format'] ?? '',
         offerId: policies[0]?.['@id'] ?? '',
         policyCount: policies.length,
+        offer: policies[0] ?? null,
       } as Dataset;
     });
+  }
+
+  /** Full consumer flow for one dataset: negotiate -> wait for agreement -> start pull transfer.
+   *  The download itself happens in the Transfers view once the transfer is STARTED. */
+  async requestAsset(row: Dataset): Promise<void> {
+    if (!row.offer) {
+      notify('Für dieses Asset ist kein Angebot (Policy) im Katalog vorhanden.', 'warning', 4000);
+      return;
+    }
+    const { counterPartyAddress, counterPartyId } = this.query;
+    try {
+      notify(`Vertragsverhandlung für ${row.id} gestartet…`, 'info', 2500);
+      const neg = await this.edc.negotiate(row.offer, row.id, counterPartyAddress, counterPartyId);
+      const negId = neg['@id'];
+
+      let agreementId = '';
+      for (let i = 0; i < 40 && !agreementId; i++) {
+        await sleep(1500);
+        const n = await this.edc.getNegotiation(negId);
+        if (n.state === 'FINALIZED') agreementId = n.contractAgreementId;
+        else if (n.state === 'TERMINATED') throw new Error('Verhandlung abgelehnt (TERMINATED).');
+      }
+      if (!agreementId) throw new Error('Zeitüberschreitung bei der Verhandlung.');
+
+      notify('Vertrag geschlossen. Transfer wird gestartet…', 'info', 2500);
+      await this.edc.startTransfer(agreementId, row.id, counterPartyAddress);
+      notify('Transfer gestartet. Unter „Transfers" herunterladen, sobald Status STARTED.', 'success', 5000);
+    } catch (e: any) {
+      notify(`Anfrage fehlgeschlagen: ${e?.message ?? 'unbekannter Fehler'}`, 'error', 5000);
+    }
   }
 }

@@ -21,3 +21,7 @@ appsettings.*.Local.json
 
 # SPA build output copied into the backend at build time
 backend/EdcAdmin.Backend/wwwroot/
+
+# Lokale Zugangsdaten / Notizen (nie committen)
+*.local.md
+ZUGANGSDATEN*.md

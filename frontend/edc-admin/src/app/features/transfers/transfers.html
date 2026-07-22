@@ -18,4 +18,16 @@
   <dxi-column dataField="contractId" caption="Contract-ID"></dxi-column>
   <dxi-column dataField="counterPartyId" caption="Gegenpartei"></dxi-column>
   <dxi-column dataField="id" caption="Transfer-ID" [visible]="false"></dxi-column>
+  <dxi-column caption="Aktion" [width]="150" cellTemplate="dlCell" [allowFiltering]="false" [allowSorting]="false"></dxi-column>
+
+  <div *dxTemplate="let cell of 'dlCell'">
+    <dx-button
+      text="Download"
+      icon="download"
+      stylingMode="text"
+      type="default"
+      [disabled]="cell.data.state !== 'STARTED'"
+      (onClick)="download(cell.data.id)"
+    ></dx-button>
+  </div>
 </dx-data-grid>

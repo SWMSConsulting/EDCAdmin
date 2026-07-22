@@ -1,0 +1,64 @@
+<div class="page-header">
+  <h2 class="page-title">Policies</h2>
+  <dx-button text="Neue Policy" icon="add" type="default" (onClick)="openCreate()"></dx-button>
+</div>
+
+<p class="hint">
+  Policies definieren die Regeln. Wer ein Asset <strong>sehen</strong> (Access-Policy) bzw.
+  <strong>laden</strong> darf (Contract-Policy), wird über eine Vertragsdefinition zugewiesen.
+  Ohne Constraint gilt „alle erlaubt".
+</p>
+
+<dx-data-grid
+  class="grid"
+  [dataSource]="store"
+  keyExpr="id"
+  [showBorders]="true"
+  [columnAutoWidth]="true"
+  [wordWrapEnabled]="true"
+>
+  <dxo-search-panel [visible]="true" [width]="280" placeholder="Suchen..."></dxo-search-panel>
+  <dxo-header-filter [visible]="true"></dxo-header-filter>
+  <dxo-paging [pageSize]="20"></dxo-paging>
+  <dxo-editing mode="row" [allowDeleting]="true" [useIcons]="true">
+    <dxo-texts confirmDeleteMessage="Diese Policy wirklich löschen?"></dxo-texts>
+  </dxo-editing>
+
+  <dxi-column dataField="id" caption="Policy-ID"></dxi-column>
+  <dxi-column dataField="type" caption="Typ" [width]="120"></dxi-column>
+  <dxi-column dataField="summary" caption="Einschränkung"></dxi-column>
+</dx-data-grid>
+
+<dx-popup
+  [visible]="popupVisible()"
+  (visibleChange)="popupVisible.set($event)"
+  title="Neue Policy"
+  [width]="520"
+  height="auto"
+  [showCloseButton]="true"
+  [hideOnOutsideClick]="true"
+>
+  <dx-form [formData]="newPolicy" labelMode="floating">
+    <dxi-item dataField="id" [label]="{ text: 'Policy-ID' }" [editorOptions]="{ stylingMode: 'outlined' }"></dxi-item>
+    <dxi-item
+      dataField="leftOperand"
+      [label]="{ text: 'Left Operand (z. B. BusinessPartnerNumber)' }"
+      [editorOptions]="{ stylingMode: 'outlined' }"
+    ></dxi-item>
+    <dxi-item
+      dataField="operator"
+      [label]="{ text: 'Operator (eq, in, …)' }"
+      [editorOptions]="{ stylingMode: 'outlined' }"
+    ></dxi-item>
+    <dxi-item
+      dataField="rightOperand"
+      [label]="{ text: 'Right Operand (z. B. BPNL… – leer = alle erlaubt)' }"
+      [editorOptions]="{ stylingMode: 'outlined' }"
+    ></dxi-item>
+  </dx-form>
+
+  <div class="popup-actions">
+    <dx-button text="Abbrechen" (onClick)="popupVisible.set(false)"></dx-button>
+    <dx-button text="Speichern" type="default" [disabled]="saving()" (onClick)="save()"></dx-button>
+  </div>
+</dx-popup>
