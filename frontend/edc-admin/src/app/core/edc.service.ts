@@ -153,7 +153,14 @@ export class EdcService {
   /** Start a contract negotiation for a catalog offer. `offer` is the raw odrl policy taken
    *  from the catalog dataset; assigner (provider) and target (asset) are stamped in. */
   negotiate(offer: any, assetId: string, counterPartyAddress: string, counterPartyId: string): Promise<any> {
-    const policy = { ...offer, '@type': 'odrl:Offer', assigner: counterPartyId, 'odrl:target': assetId };
+    // assigner and target must be in the odrl namespace and be node references ({ @id }); a plain
+    // 'assigner' resolves to the edc @vocab and a string target has no @id -> EDC 400.
+    const policy = {
+      ...offer,
+      '@type': 'odrl:Offer',
+      'odrl:assigner': { '@id': counterPartyId },
+      'odrl:target': { '@id': assetId },
+    };
     return firstValueFrom(
       this.http.post<any>(`${this.base}/contractnegotiations`, {
         ...EDC_CTX,
