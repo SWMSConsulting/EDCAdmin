@@ -51,6 +51,10 @@ var edcApiKey = builder.Configuration["EdcManagement:ApiKey"] ?? "";
 // HttpClient for the server-side download proxy (EDR retrieval + data-plane fetch).
 builder.Services.AddHttpClient();
 
+// HttpClient for the BDRS directory lookup; BDRS replies gzip-encoded, so decompress automatically.
+builder.Services.AddHttpClient("directory").ConfigurePrimaryHttpMessageHandler(() =>
+    new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.GZip });
+
 builder.Services.AddReverseProxy().LoadFromMemory(
     routes:
     [
@@ -128,6 +132,69 @@ app.MapGet("/api/config", (IConfiguration cfg) => Results.Ok(new
     bpn = cfg["EdcManagement:Bpn"],
     dspAddress = cfg["EdcManagement:DspAddress"],
 })).RequireAuthorization("authenticated");
+
+// --- Dataspace participant directory (BDRS) ----------------------------------------------------
+// Every dataspace member may read the central BPN->DID directory, but the operator requires a
+// Membership Verifiable Presentation as Bearer. We run the tractusx presentation flow server-side:
+//   1) get a self-issued token from our own IdentityHub STS (scoped to MembershipCredential),
+//   2) ask our IdentityHub to build a Membership VP (the IH signs it with our key),
+//   3) present that VP to the operator's BDRS and return the decoded BPN->DID map.
+// The STS client secret stays server-side (like the management key); the browser only sees the list.
+app.MapGet("/api/directory", async (IConfiguration cfg, IHttpClientFactory httpFactory, CancellationToken ct) =>
+{
+    var did = cfg["EdcManagement:ParticipantId"] ?? "";
+    var stsUrl = cfg["Directory:IhStsTokenUrl"] ?? "";
+    var presBase = cfg["Directory:IhPresentationBaseUrl"] ?? "";
+    var bdrsUrl = cfg["Directory:BdrsDirectoryUrl"] ?? "";
+    var stsSecret = cfg["Directory:StsClientSecret"] ?? "";
+    var scope = cfg["Directory:Scope"] ?? "org.eclipse.tractusx.vc.type:MembershipCredential:read";
+
+    if (string.IsNullOrEmpty(did) || string.IsNullOrEmpty(stsUrl) || string.IsNullOrEmpty(presBase)
+        || string.IsNullOrEmpty(bdrsUrl) || string.IsNullOrEmpty(stsSecret))
+        return Results.Json(new { error = "directory lookup is not configured" }, statusCode: StatusCodes.Status501NotImplemented);
+
+    var http = httpFactory.CreateClient("directory");
+
+    // 1) self-issued token from our IdentityHub STS
+    using var stsResp = await http.PostAsync(stsUrl, new FormUrlEncodedContent(new Dictionary<string, string>
+    {
+        ["grant_type"] = "client_credentials",
+        ["client_id"] = did,
+        ["client_secret"] = stsSecret,
+        ["audience"] = did,
+        ["bearer_access_scope"] = scope,
+    }), ct);
+    if (!stsResp.IsSuccessStatusCode)
+        return Results.Json(new { error = "STS token request failed", step = "sts", status = (int)stsResp.StatusCode }, statusCode: StatusCodes.Status502BadGateway);
+    var accessToken = (await stsResp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct)).GetProperty("access_token").GetString();
+
+    // 2) ask our IdentityHub for a Membership VP (participantContextId = base64(DID))
+    var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(did));
+    using var presReq = new HttpRequestMessage(HttpMethod.Post, $"{presBase.TrimEnd('/')}/{b64}/presentations/query");
+    presReq.Headers.TryAddWithoutValidation("Authorization", $"Bearer {accessToken}");
+    presReq.Content = new StringContent(
+        $"{{\"@context\":[\"https://w3id.org/tractusx-trust/v0.8\"],\"@type\":\"PresentationQueryMessage\",\"scope\":[\"{scope}\"]}}",
+        Encoding.UTF8, "application/json");
+    using var presResp = await http.SendAsync(presReq, ct);
+    if (!presResp.IsSuccessStatusCode)
+        return Results.Json(new { error = "presentation query failed", step = "presentation", status = (int)presResp.StatusCode }, statusCode: StatusCodes.Status502BadGateway);
+    var presProp = (await presResp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct)).GetProperty("presentation");
+    var vp = presProp.ValueKind == JsonValueKind.Array ? presProp[0].GetString() : presProp.GetString();
+
+    // 3) present the VP to the central BDRS directory
+    using var dirReq = new HttpRequestMessage(HttpMethod.Get, bdrsUrl);
+    dirReq.Headers.TryAddWithoutValidation("Authorization", $"Bearer {vp}");
+    using var dirResp = await http.SendAsync(dirReq, ct);
+    if (!dirResp.IsSuccessStatusCode)
+        return Results.Json(new { error = "BDRS directory request failed", step = "bdrs", status = (int)dirResp.StatusCode }, statusCode: StatusCodes.Status502BadGateway);
+    var map = await dirResp.Content.ReadFromJsonAsync<Dictionary<string, string>>(cancellationToken: ct) ?? new();
+
+    var selfBpn = cfg["EdcManagement:Bpn"];
+    var entries = map
+        .Select(kv => new { bpn = kv.Key, did = kv.Value, self = kv.Key == selfBpn })
+        .OrderBy(e => e.bpn, StringComparer.Ordinal);
+    return Results.Ok(entries);
+}).RequireAuthorization("authenticated");
 
 // --- Data download proxy -----------------------------------------------------------------------
 // Consumer-pull download: for a STARTED transfer process the EDC has cached an EDR. We fetch that

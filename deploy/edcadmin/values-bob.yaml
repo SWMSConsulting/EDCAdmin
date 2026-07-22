@@ -18,3 +18,10 @@ ingress:
   whitelistSourceRange: ""
 
 fullnameOverride: edcadmin-bob
+
+directory:
+  enabled: true
+  ihStsTokenUrl: "http://bob-ih:8087/api/sts/token"
+  ihPresentationBaseUrl: "http://bob-ih:8083/api/credentials/v1/participants"
+  bdrsDirectoryUrl: "https://auth-windx.cluster.swms-cloud.com/api/directory/bpn-directory"
+  scope: "org.eclipse.tractusx.vc.type:MembershipCredential:read"

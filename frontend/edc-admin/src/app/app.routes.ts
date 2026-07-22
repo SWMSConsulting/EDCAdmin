@@ -11,6 +11,7 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'catalog', pathMatch: 'full' },
       { path: 'catalog', loadComponent: () => import('./features/catalog/catalog').then(m => m.Catalog) },
+      { path: 'participants', loadComponent: () => import('./features/participants/participants').then(m => m.Participants) },
       { path: 'assets', loadComponent: () => import('./features/assets/assets').then(m => m.Assets) },
       { path: 'policies', loadComponent: () => import('./features/policies/policies').then(m => m.Policies) },
       { path: 'contract-definitions', loadComponent: () => import('./features/contract-definitions/contract-definitions').then(m => m.ContractDefinitions) },

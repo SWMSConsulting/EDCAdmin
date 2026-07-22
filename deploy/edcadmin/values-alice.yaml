@@ -19,3 +19,10 @@ ingress:
   whitelistSourceRange: ""
 
 fullnameOverride: edcadmin-alice
+
+directory:
+  enabled: true
+  ihStsTokenUrl: "http://alice-ih:8087/api/sts/token"
+  ihPresentationBaseUrl: "http://alice-ih:8083/api/credentials/v1/participants"
+  bdrsDirectoryUrl: "https://auth-windx.cluster.swms-cloud.com/api/directory/bpn-directory"
+  scope: "org.eclipse.tractusx.vc.type:MembershipCredential:read"

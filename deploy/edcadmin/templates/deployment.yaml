@@ -52,6 +52,21 @@ spec:
                 secretKeyRef:
                   name: {{ include "edcadmin.secretName" . }}
                   key: edc-api-key
+            {{- if .Values.directory.enabled }}
+            - name: Directory__IhStsTokenUrl
+              value: {{ .Values.directory.ihStsTokenUrl | quote }}
+            - name: Directory__IhPresentationBaseUrl
+              value: {{ .Values.directory.ihPresentationBaseUrl | quote }}
+            - name: Directory__BdrsDirectoryUrl
+              value: {{ .Values.directory.bdrsDirectoryUrl | quote }}
+            - name: Directory__Scope
+              value: {{ .Values.directory.scope | quote }}
+            - name: Directory__StsClientSecret
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "edcadmin.secretName" . }}
+                  key: sts-client-secret
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz

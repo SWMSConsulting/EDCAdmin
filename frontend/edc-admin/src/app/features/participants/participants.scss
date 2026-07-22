@@ -1,0 +1,24 @@
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.page-title {
+  margin: 0;
+}
+
+.hint {
+  margin: 0 0 16px;
+  color: #757575;
+}
+
+.error-banner {
+  margin-bottom: 16px;
+  color: #d9534f;
+}
+
+.grid {
+  max-height: calc(100vh - 200px);
+}

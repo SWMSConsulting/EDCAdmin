@@ -14,6 +14,15 @@ edc:
   bpn: ""
   dspAddress: ""
 
+# Central BDRS participant directory lookup (BPN->DID of all dataspace members).
+# The backend runs the tractusx presentation flow via our own IdentityHub.
+directory:
+  enabled: false
+  ihStsTokenUrl: ""            # e.g. http://alice-ih:8087/api/sts/token
+  ihPresentationBaseUrl: ""    # e.g. http://alice-ih:8083/api/credentials/v1/participants
+  bdrsDirectoryUrl: ""         # e.g. https://auth-windx.cluster.swms-cloud.com/api/directory/bpn-directory
+  scope: "org.eclipse.tractusx.vc.type:MembershipCredential:read"
+
 # Login for the UI. Password is served from a Secret (see 'secrets' below).
 auth:
   username: "admin"
@@ -25,6 +34,7 @@ secrets:
   create: true
   authPassword: ""
   edcApiKey: ""
+  stsClientSecret: ""
 existingSecret: ""
 
 service:

@@ -1,0 +1,31 @@
+<div class="page-header">
+  <h2 class="page-title">Dataspace-Teilnehmer</h2>
+  <dx-button icon="refresh" text="Aktualisieren" (onClick)="load()" [disabled]="loading()"></dx-button>
+</div>
+
+<p class="hint">
+  Alle im zentralen Verzeichnisdienst (BDRS) registrierten Teilnehmer des Datenraums. Die Abfrage
+  weist serverseitig die eigene MembershipCredential nach.
+</p>
+
+@if (error()) {
+  <div class="error-banner">{{ error() }}</div>
+}
+
+<dx-data-grid
+  class="grid"
+  [dataSource]="entries()"
+  keyExpr="bpn"
+  [showBorders]="true"
+  [columnAutoWidth]="true"
+  [wordWrapEnabled]="true"
+>
+  <dxo-search-panel [visible]="true" [width]="280" placeholder="Suchen..."></dxo-search-panel>
+  <dxo-header-filter [visible]="true"></dxo-header-filter>
+  <dxo-paging [pageSize]="25"></dxo-paging>
+  <dxo-load-panel [enabled]="loading()"></dxo-load-panel>
+
+  <dxi-column dataField="bpn" caption="BPN"></dxi-column>
+  <dxi-column dataField="did" caption="DID"></dxi-column>
+  <dxi-column dataField="self" caption="Eigener" dataType="boolean" [width]="110" alignment="center"></dxi-column>
+</dx-data-grid>

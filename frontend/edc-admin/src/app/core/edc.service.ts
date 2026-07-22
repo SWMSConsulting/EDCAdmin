@@ -18,6 +18,12 @@ export interface ConnectorInfo {
   dspAddress: string;
 }
 
+export interface DirectoryEntry {
+  bpn: string;
+  did: string;
+  self: boolean;
+}
+
 export interface NewAsset {
   id: string;
   name: string;
@@ -87,6 +93,11 @@ export class EdcService {
   /** Deploy-fixed connector coordinates (read-only), served by the backend. */
   connectorInfo(): Promise<ConnectorInfo> {
     return firstValueFrom(this.http.get<ConnectorInfo>('/api/config'));
+  }
+
+  /** All registered dataspace participants (BPN -> DID) from the central BDRS directory. */
+  directory(): Promise<DirectoryEntry[]> {
+    return firstValueFrom(this.http.get<DirectoryEntry[]>('/api/directory'));
   }
 
   // --- Catalog ----------------------------------------------------------------------------------
