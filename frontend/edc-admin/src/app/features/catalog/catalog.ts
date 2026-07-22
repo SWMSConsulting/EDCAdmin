@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DxFormModule } from 'devextreme-angular/ui/form';
 import { DxButtonModule } from 'devextreme-angular/ui/button';
 import { DxDataGridModule } from 'devextreme-angular/ui/data-grid';
@@ -32,7 +33,17 @@ export class Catalog {
   readonly error = signal<string | null>(null);
 
   constructor() {
-    // Prefill the form with the own connector's DSP address + BPN as a working example.
+    // If we arrived from the participant directory with ?dsp=&bpn=, target that partner and fetch.
+    const qp = inject(ActivatedRoute).snapshot.queryParamMap;
+    const dsp = qp.get('dsp');
+    const bpn = qp.get('bpn');
+    if (dsp && bpn) {
+      this.query.counterPartyAddress = dsp;
+      this.query.counterPartyId = bpn;
+      this.request();
+      return;
+    }
+    // Otherwise prefill the form with the own connector's DSP address + BPN as a working example.
     this.edc
       .connectorInfo()
       .then((info) => {

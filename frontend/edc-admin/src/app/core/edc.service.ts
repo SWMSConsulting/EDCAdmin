@@ -22,6 +22,7 @@ export interface DirectoryEntry {
   bpn: string;
   did: string;
   self: boolean;
+  dspUrl: string | null;
 }
 
 export interface NewAsset {

@@ -27,5 +27,19 @@
 
   <dxi-column dataField="bpn" caption="BPN"></dxi-column>
   <dxi-column dataField="did" caption="DID"></dxi-column>
-  <dxi-column dataField="self" caption="Eigener" dataType="boolean" [width]="110" alignment="center"></dxi-column>
+  <dxi-column dataField="dspUrl" caption="DSP-Adresse"></dxi-column>
+  <dxi-column dataField="self" caption="Eigener" dataType="boolean" [width]="100" alignment="center"></dxi-column>
+
+  <dxi-column caption="Aktion" [width]="150" cellTemplate="catalogCell" [allowSorting]="false" [allowFiltering]="false"></dxi-column>
+  <div *dxTemplate="let cell of 'catalogCell'">
+    @if (!cell.data.self && cell.data.dspUrl) {
+      <dx-button
+        text="Katalog"
+        icon="search"
+        stylingMode="text"
+        type="default"
+        (onClick)="openCatalog(cell.data)"
+      ></dx-button>
+    }
+  </div>
 </dx-data-grid>

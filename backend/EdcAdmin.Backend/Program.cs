@@ -188,12 +188,17 @@ app.MapGet("/api/directory", async (IConfiguration cfg, IHttpClientFactory httpF
     if (!dirResp.IsSuccessStatusCode)
         return Results.Json(new { error = "BDRS directory request failed", step = "bdrs", status = (int)dirResp.StatusCode }, statusCode: StatusCodes.Status502BadGateway);
     var map = await dirResp.Content.ReadFromJsonAsync<Dictionary<string, string>>(cancellationToken: ct) ?? new();
-
     var selfBpn = cfg["EdcManagement:Bpn"];
-    var entries = map
-        .Select(kv => new { bpn = kv.Key, did = kv.Value, self = kv.Key == selfBpn })
-        .OrderBy(e => e.bpn, StringComparer.Ordinal);
-    return Results.Ok(entries);
+
+    // Enrich each entry with its DSP protocol endpoint, resolved from the participant's did:web document.
+    var enriched = await Task.WhenAll(map.Select(async kv => new
+    {
+        bpn = kv.Key,
+        did = kv.Value,
+        self = kv.Key == selfBpn,
+        dspUrl = await ResolveDspEndpointAsync(http, kv.Value, ct),
+    }));
+    return Results.Ok(enriched.OrderBy(e => e.bpn, StringComparer.Ordinal));
 }).RequireAuthorization("authenticated");
 
 // --- Data download proxy -----------------------------------------------------------------------
@@ -251,5 +256,43 @@ static string? JsonProp(JsonElement obj, params string[] names)
 static bool ConstantTimeEquals(string? a, string? b) =>
     CryptographicOperations.FixedTimeEquals(
         Encoding.UTF8.GetBytes(a ?? ""), Encoding.UTF8.GetBytes(b ?? ""));
+
+// did:web:host[:seg...] -> https://host[/seg...]/did.json (host at root uses /.well-known/did.json).
+static string? DidWebToDocumentUrl(string did)
+{
+    const string prefix = "did:web:";
+    if (string.IsNullOrEmpty(did) || !did.StartsWith(prefix, StringComparison.Ordinal)) return null;
+    var parts = did[prefix.Length..].Split(':');
+    var host = Uri.UnescapeDataString(parts[0]);
+    return parts.Length == 1
+        ? $"https://{host}/.well-known/did.json"
+        : $"https://{host}/{string.Join('/', parts[1..].Select(Uri.UnescapeDataString))}/did.json";
+}
+
+// Resolve a participant's DSP protocol endpoint from its did:web document (best-effort; null on failure).
+static async Task<string?> ResolveDspEndpointAsync(HttpClient http, string did, CancellationToken ct)
+{
+    var url = DidWebToDocumentUrl(did);
+    if (url is null) return null;
+    try
+    {
+        using var resp = await http.GetAsync(url, ct);
+        if (!resp.IsSuccessStatusCode) return null;
+        using var jd = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
+        if (!jd.RootElement.TryGetProperty("service", out var services) || services.ValueKind != JsonValueKind.Array)
+            return null;
+        string? fallback = null;
+        foreach (var s in services.EnumerateArray())
+        {
+            var type = s.TryGetProperty("type", out var t) ? t.GetString() : null;
+            var ep = s.TryGetProperty("serviceEndpoint", out var e) ? e.GetString() : null;
+            if (string.IsNullOrEmpty(ep)) continue;
+            if (type == "ProtocolEndpoint") return ep;                 // explicit DSP endpoint
+            if (ep.Contains("/dsp", StringComparison.OrdinalIgnoreCase)) fallback ??= ep;
+        }
+        return fallback;
+    }
+    catch { return null; }
+}
 
 internal sealed record LoginRequest(string Username, string Password);
